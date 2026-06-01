@@ -81,51 +81,26 @@ Essa derivada é utilizada durante o backpropagation.
 
 ## Propagação direta
 
-Para cada amostra de entrada, é adicionado o bias:
-
-```octave
-entrada = [1; entradas(j, :)'];
-```
-
 A saída da camada oculta é calculada por:
 
 $$
-z_{oculta} = W_{entrada,oculta}^{T}x
+z_{oculta} = W_{entrada,oculta}^{T} \cdot X
 $$
 
 $$
 h = f(z_{oculta})
 $$
 
-No código:
 
-```octave
-somaOculta = pesosEntradaOculta' * entrada;
-saidaOculta = 1 ./ (1 + exp(-somaOculta));
-```
-
-Em seguida, adiciona-se o bias à saída da camada oculta:
-
-```octave
-saidaOcultaComBias = [1; saidaOculta];
-```
-
-A saída final da rede é calculada por:
+A saída final da rede, na camada de saída é calculada por:
 
 $$
-z_{saida} = W_{oculta,saida}^{T}h
+z_{saida} = W_{oculta,saida}^{T} \cdot H
 $$
 
 $$
 \hat{y} = f(z_{saida})
 $$
-
-No código:
-
-```octave
-somaSaida = pesosOcultaSaida' * saidaOcultaComBias;
-saidaObtida = 1 / (1 + exp(-somaSaida));
-```
 
 ---
 
@@ -136,12 +111,6 @@ O erro é calculado pela diferença entre a saída desejada e a saída obtida:
 $$
 erro = y - \hat{y}
 $$
-
-No Octave:
-
-```octave
-erro = saidaDesejada - saidaObtida;
-```
 
 Também é calculado o erro quadrático:
 
@@ -154,13 +123,6 @@ E o erro médio da época:
 $$
 erroMedio = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y_i})^2
 $$
-
-No código:
-
-```octave
-erroQuadratico = erroQuadratico + erro^2;
-erroMedio = erroQuadratico / size(entradas, 1);
-```
 
 ---
 
@@ -176,11 +138,6 @@ $$
 \delta_{saida} = erro \cdot \hat{y}(1 - \hat{y})
 $$
 
-No código:
-
-```octave
-deltaSaida = erro * saidaObtida * (1 - saidaObtida);
-```
 
 ### Delta da camada oculta
 
@@ -191,14 +148,7 @@ $$
 (W_{oculta,saida} \cdot \delta_{saida}) \cdot h(1 - h)
 $$
 
-No código:
-
-```octave
-deltaOculta = (pesosOcultaSaida(2:end) * deltaSaida) ...
-              .* saidaOculta .* (1 - saidaOculta);
-```
-
-O trecho `pesosOcultaSaida(2:end)` ignora o peso do bias, pois o bias não recebe erro retropropagado.
+Lembrando que o bias não recebe o erro retropropagado.
 
 ---
 
@@ -231,7 +181,7 @@ pesosEntradaOculta = pesosEntradaOculta + ...
 | Parâmetro               | Valor    |
 | :---------------------- | :------- |
 | Taxa de aprendizagem    | `0.7`    |
-| Número máximo de épocas | `10000`  |
+| Número máximo de épocas | `1000`  |
 | Erro mínimo             | `0.01`   |
 | Neurônios de entrada    | `2`      |
 | Neurônios ocultos       | `2`      |
@@ -247,43 +197,12 @@ O treinamento é executado até que uma das condições seja satisfeita:
 1. O número máximo de épocas seja atingido;
 2. O erro médio seja menor que o erro mínimo definido.
 
-```octave
-if erroMedio < erroMinimo
-    fprintf("Treinamento finalizado na epoca %d\n", epoca);
-    break;
-end
-```
 
 ---
 
 ## Teste da rede neural
 
-Após o treinamento, a rede é testada com todas as combinações da porta XOR:
-
-```octave
-fprintf("\nTeste da rede neural para XOR:\n");
-
-for j = 1:size(entradas, 1)
-
-    entrada = [1; entradas(j, :)'];
-
-    somaOculta = pesosEntradaOculta' * entrada;
-    saidaOculta = 1 ./ (1 + exp(-somaOculta));
-
-    saidaOcultaComBias = [1; saidaOculta];
-
-    somaSaida = pesosOcultaSaida' * saidaOcultaComBias;
-    saidaObtida = 1 / (1 + exp(-somaSaida));
-
-    saidaBinaria = saidaObtida >= 0.5;
-
-    fprintf("%d XOR %d = %.4f -> %d\n", ...
-            entradas(j, 1), entradas(j, 2), saidaObtida, saidaBinaria);
-
-end
-```
-
-A saída numérica da rede é convertida para uma saída binária usando o limiar `0.5`:
+Após o treinamento, a rede é testada com todas as combinações da porta XOR. A saída numérica da rede é convertida para uma saída binária usando o limiar `0.5`:
 
 $$
 saida =
@@ -293,45 +212,6 @@ saida =
 \end{cases}
 $$
 
-No código:
-
-```octave
-saidaBinaria = saidaObtida >= 0.5;
-```
-
----
-
-## Entrada do usuário
-
-Após o treinamento, o programa solicita ao usuário dois valores de entrada:
-
-```octave
-x1 = input("Digite o valor de x1, 0 ou 1: ");
-x2 = input("Digite o valor de x2, 0 ou 1: ");
-```
-
-Esses valores são enviados para a rede neural treinada:
-
-```octave
-entradaUsuario = [1; x1; x2];
-
-somaOculta = pesosEntradaOculta' * entradaUsuario;
-saidaOculta = 1 ./ (1 + exp(-somaOculta));
-
-saidaOcultaComBias = [1; saidaOculta];
-
-somaSaida = pesosOcultaSaida' * saidaOcultaComBias;
-saidaRede = 1 / (1 + exp(-somaSaida));
-
-saidaFinal = saidaRede >= 0.5;
-```
-
-Por fim, o programa exibe a saída numérica e a saída binária da rede:
-
-```octave
-fprintf("\nSaida numerica da rede: %.4f\n", saidaRede);
-fprintf("Saida binaria da rede: %d\n", saidaFinal);
-```
 
 ---
 
@@ -346,26 +226,17 @@ Após o treinamento, espera-se que a rede neural aprenda o comportamento da port
 |       1       |       0       |       1        | próximo de 1  |
 |       1       |       1       |       0        | próximo de 0  |
 
-Um exemplo de saída possível é:
+Um exemplo de saída obtida foi:
 
 ```text
 Teste da rede neural para XOR:
-
-0 XOR 0 = 0.08 -> 0
-0 XOR 1 = 0.91 -> 1
-1 XOR 0 = 0.91 -> 1
-1 XOR 1 = 0.10 -> 0
+0 XOR 0 = 0.1026 -> 0
+0 XOR 1 = 0.8948 -> 1
+1 XOR 0 = 0.9001 -> 1
+1 XOR 1 = 0.0875 -> 0
 ```
 
 Os valores numéricos podem variar de acordo com a inicialização dos pesos, a taxa de aprendizagem e o número de épocas.
-
-Como foi utilizada a instrução:
-
-```octave
-rand("seed", 1);
-```
-
-a geração dos pesos iniciais tende a ser repetível, fazendo com que o resultado seja semelhante em diferentes execuções.
 
 ---
 
